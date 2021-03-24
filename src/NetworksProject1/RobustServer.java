@@ -2,45 +2,34 @@ package NetworksProject1;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.*;
 
 
 public class RobustServer {
+
+    public static final int TIMEOUT = 3;
+
     public static void main(String[] args) {
-        ServerSocket welcomeSocket = null;
-        int clientId=0;
-
-        try {
-
-            // create welcoming socket at port 6789
-            welcomeSocket = new ServerSocket(6789);
+        int clientId = 0;
+        // create welcoming socket at port 6789
+        try (ServerSocket welcomeSocket = new ServerSocket(6789);) {
             System.out.println("Server up and running, waiting for requests....");
-
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
             while (true) {
-                //for visualization purpose, the clientId will count the clients and display which one is processed.
+                // for visualization purpose, the clientId will count the clients and display which one is processed.
                 // wait on welcoming socket for contact by client, creates a new socket
                 Socket connectionSocket = welcomeSocket.accept();
-
+                // Add timeout to socket
+                connectionSocket.setSoTimeout(TIMEOUT*1000);
                 clientId++;//a new client is connected
-                System.out.println("Client "+ clientId +" connected at: "+ connectionSocket.getInetAddress().getHostAddress());
+                System.out.println("Client " + clientId + " connected at: " + connectionSocket.getInetAddress().getHostAddress());
 
-                // create a new thread object 
-                ClientHandler clientSock= new ClientHandler(connectionSocket,clientId);
-                // This thread will handle the client separately
-                new Thread(clientSock).start();
+                // create and submit new runnable to executor, if thread pool limit is already reached then the current client will wait in a queue
+                ClientHandler clientSock = new ClientHandler(connectionSocket, clientId);
+                executor.submit(clientSock);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        }
-        finally {
-            if (welcomeSocket != null) {
-                try {
-                    welcomeSocket.close();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
@@ -50,52 +39,45 @@ public class RobustServer {
         private final int clientId;
 
         // Constructor 
-        public ClientHandler(Socket socket,int clientId)
-        {
+        public ClientHandler(Socket socket, int clientId) {
             this.clientSocket = socket;
-            this.clientId=clientId;
+            this.clientId = clientId;
         }
 
-        public void run()
-        {
-            String clientSentence,capitalizedSentence;
-            DataOutputStream outToClient = null;
-            BufferedReader inFromClient = null;
-            System.out.println("Processing client " + clientId);
+        public void run() {
+            // Execute server code in a callable to take advantage of the future .get() with timeout
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<String> future = executor.submit(new Callable<String>() {
+                @Override
+                public String call() {
+                    String clientSentence, capitalizedSentence;
+                    System.out.println("Processing client " + clientId);
+
+                    //create input and output streams attached to socket
+                    try (DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream());
+                         BufferedReader inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+
+                        clientSentence = inFromClient.readLine(); // read in line from socket
+                        capitalizedSentence = clientSentence.toUpperCase() + '\n'; // make sure to add carriage return here!
+
+                        outToClient.writeBytes(capitalizedSentence); // write out line to socket
+
+                        return "Served client " + clientId;
+
+                    } catch (IOException e) {
+                        return "Failed to serve client " + clientId;
+                    }
+                }
+            });
 
             try {
-                //create input stream attached to socket
-                inFromClient = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()));
-
-                // create output stream attached to socket
-                outToClient = new DataOutputStream(clientSocket.getOutputStream());
-
-                clientSentence = inFromClient.readLine(); // read in line from socket
-                capitalizedSentence = clientSentence.toUpperCase() + '\n'; // make sure to add carriage return here!
-
-                outToClient.writeBytes(capitalizedSentence); // write out line to socket
-
-                System.out.println("Done with client " + clientId);
-
+                // Wait for the server code above to execute with a timeout
+                future.get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                future.cancel(true);
+                System.out.println("Connection timed out!");
             }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                try {
-                    if (outToClient != null) {
-                        outToClient.close();
-                    }
-                    if (inFromClient!= null) {
-                        inFromClient.close();
-                        clientSocket.close();
-                    }
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            executor.shutdownNow();
         }
     }
 }

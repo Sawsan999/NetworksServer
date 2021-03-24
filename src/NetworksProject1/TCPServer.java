@@ -4,10 +4,13 @@ package NetworksProject1;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TCPServer {
 
     public static void main(String[] args) throws Exception {
+
 
         System.out.println("Server up and running, waiting for requests....");
         String clientSentence; // text from client
@@ -15,6 +18,7 @@ public class TCPServer {
 
         // create welcoming socket at port 6789
         ServerSocket welcomeSocket = new ServerSocket(6789);
+        welcomeSocket.setSoTimeout(5000);
 
         int clientId = 0;
 
@@ -23,8 +27,7 @@ public class TCPServer {
             Socket connectionSocket = welcomeSocket.accept();
 
             //create input stream attached to socket
-            BufferedReader inFromClient = new BufferedReader(
-                    new InputStreamReader(connectionSocket.getInputStream()));
+            BufferedReader inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
 
             // create output stream attached to socket
             DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
