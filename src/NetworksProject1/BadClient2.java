@@ -1,45 +1,22 @@
 package NetworksProject1;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.Socket;
 
-public class BadClient2{
+public class BadClient2 {
 
-    public static void main(String[]args)throws Exception{
+    public static void main(String[] args) throws Exception {
         String sentence; // data to send to server
         String modifiedSentence; // received from server
-        int id=0;
-        while(id<10) {
+        int id = 0;
+        while (true) {
             System.out.println(++id);
-            // create a new thread object
-            DDOSAttack attack= new DDOSAttack ("localhost",6789);
-            // This thread will handle the client separately
-            new Thread(attack).start();
-        }
-    }
-    // DDOS class
-    private static class DDOSAttack implements Runnable {
-        private final String host;
-        private final int port;
-
-        // Constructor
-        public DDOSAttack(String host,int port)
-        {
-            this.host = host;
-            this.port=port;
-        }
-
-        public void run() {
-            while (true) {
-                try {
-                    // create client socket and connect to server; this initiates TCP cnx between client and server
-                    Socket clientSocket = new Socket(host, port);
-                    // Don't close the connection to keep the server busy
-                    while (true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
+            try {
+                // create client socket and connect to server; this initiates TCP cnx between client and server
+                Socket clientSocket = new Socket("localhost", 6789);
+                Thread.sleep(500);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

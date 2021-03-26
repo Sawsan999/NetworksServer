@@ -1,11 +1,10 @@
 package NetworksProject1;
 
-//import com.sun.security.ntlm.Server;
-
-import java.io.*;
-import java.net.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class TCPServer {
 
@@ -22,7 +21,7 @@ public class TCPServer {
 
         int clientId = 0;
 
-        while(true){
+        while (true) {
             // wait on welcoming socket for contact by client, creates a new socket
             Socket connectionSocket = welcomeSocket.accept();
 

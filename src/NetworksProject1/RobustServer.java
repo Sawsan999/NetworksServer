@@ -1,26 +1,29 @@
 package NetworksProject1;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.*;
 
 
 public class RobustServer {
 
-    public static final int TIMEOUT = 3;
+    public static final int TIMEOUT = 30;
 
     public static void main(String[] args) {
         int clientId = 0;
         // create welcoming socket at port 6789
         try (ServerSocket welcomeSocket = new ServerSocket(6789);) {
             System.out.println("Server up and running, waiting for requests....");
-            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(100);
             while (true) {
                 // for visualization purpose, the clientId will count the clients and display which one is processed.
                 // wait on welcoming socket for contact by client, creates a new socket
                 Socket connectionSocket = welcomeSocket.accept();
                 // Add timeout to socket
-                connectionSocket.setSoTimeout(TIMEOUT*1000);
                 clientId++;//a new client is connected
                 System.out.println("Client " + clientId + " connected at: " + connectionSocket.getInetAddress().getHostAddress());
 
@@ -73,6 +76,7 @@ public class RobustServer {
             try {
                 // Wait for the server code above to execute with a timeout
                 future.get(TIMEOUT, TimeUnit.SECONDS);
+                System.out.println(future.get());
             } catch (Exception e) {
                 future.cancel(true);
                 System.out.println("Connection timed out!");
